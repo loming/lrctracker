@@ -60,7 +60,7 @@ import {
   onBeforeUnmount,
   nextTick,
 } from "vue";
-const { ipcRenderer, binanceGet } = window.electron;
+const { ipcRenderer } = window.electron;
 // import { WsAPI, UserAPI, ChainId } from "@loopring-web/loopring-sdk";
 import { createChart, CrosshairMode } from "lightweight-charts";
 // import { binance_api } from "boot/axios";
@@ -325,14 +325,14 @@ export default defineComponent({
     };
 
     // SETUP Loopring
-    const lr_prices = ref({
-      "LRC-USDT": {
-        lt: 0, //last tick
-        lp: 0, //last price
-        cp: 0, //change percent
-        d: 0, //differents
-      },
-    });
+    // const lr_prices = ref({
+    //   "LRC-USDT": {
+    //     lt: 0, //last tick
+    //     lp: 0, //last price
+    //     cp: 0, //change percent
+    //     d: 0, //differents
+    //   },
+    // });
     // const setupLoopRing = async () => {
     //   const wsApi = new WsAPI(ChainId.MAINNET);
     //   const wsKey = await wsApi.getWsKey();
@@ -465,6 +465,9 @@ export default defineComponent({
     onBeforeUnmount((_) => removeEventListener("resize", onResize));
     onMounted(() => {
       addEventListener("resize", onResize);
+      addEventListener("online", () => {
+        setupBinance();
+      });
 
       nextTick(function () {
         // Code that will run only after the
@@ -478,7 +481,6 @@ export default defineComponent({
 
     return {
       prices,
-      lr_prices,
       durations,
       selectedDuration,
       selectDuration,
