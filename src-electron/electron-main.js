@@ -2,6 +2,20 @@ import { app, BrowserWindow, nativeTheme, Tray, ipcMain, Menu } from "electron";
 import path from "path";
 import os from "os";
 import ansi from "ansicolor";
+import Binance from "binance-api-node";
+import keytar from "keytar";
+
+let binanceClient = null;
+
+try {
+  keytar.getPassword("binance", "key").then((key) => {
+    keytar.getPassword("binance", "secret").then((secret) => {
+      binanceClient = new Binance({ apiKey: key, apiSecret: secret });
+    });
+  });
+} catch (err) {
+  console.log("no binance key / secret found", err);
+}
 
 import axios from "axios";
 const binance_api = axios.create({
@@ -138,6 +152,27 @@ ipcMain.on("price-change", async (event, _prices) => {
 ipcMain.handle("binanceGet", async (event, arg) => {
   const { path, params } = JSON.parse(arg);
   return JSON.stringify((await binance_api.get(path, params)).data);
+});
+
+ipcMain.handle("binanceGetKey", async (event, arg) => {
+  let key = await keytar.getPassword("binance", "key");
+  let secret = await keytar.getPassword("binance", "secret");
+
+  return JSON.stringify({ key, secret });
+});
+ipcMain.handle("binanceSetKey", async (event, arg) => {
+  try {
+    const { key, secret } = JSON.parse(arg);
+    keytar.setPassword("binance", "key", key);
+    keytar.setPassword("binance", "secret", secret);
+
+    binanceClient = new Binance({ apiKey: key, apiSecret: secret });
+
+    return "Success";
+  } catch (err) {
+    console.log(err);
+    return "Failure";
+  }
 });
 
 app.on("window-all-closed", () => {

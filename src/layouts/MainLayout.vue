@@ -1,29 +1,86 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-bar
-      class="q-electron-drag"
-      style="background-color: #131722; color: #ffffff"
+    <q-header
+      class="flex"
+      elevated
+      style="
+        -webkit-app-region: drag;
+        padding: 8px;
+        padding-right: 16px;
+        color: #ffffff;
+        background-color: #131722;
+      "
     >
       <q-space />
-    </q-bar>
-    <!-- <q-header
-      elevated
-      style="-webkit-app-region: drag; height: 40px; background-color: #131722"
-    >
-    </q-header> -->
+      <q-btn
+        round
+        push
+        size="12px"
+        icon="settings"
+        @click="binancePrompt = true"
+      />
+    </q-header>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <q-dialog v-model="binancePrompt" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">API Key</div>
+          <q-input dense autofocus type="password" v-model="apiKey" />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-h6">API Secret</div>
+          <q-input dense autofocus type="password" v-model="apiSecret" />
+        </q-card-section>
+
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn flat label="Save" @click="saveBinance()" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-layout>
 </template>
 
 <script>
 import { defineComponent, ref } from "vue";
+const { ipcRenderer } = window.electron;
 
 export default defineComponent({
   name: "MainLayout",
 
-  setup() {},
+  setup() {
+    let binancePrompt = ref(false);
+    let apiKey = ref("");
+    let apiSecret = ref("");
+
+    const getBinance = async () => {
+      let result = await ipcRenderer.invoke("binanceGetKey");
+      console.log(result);
+      let { key, secret } = JSON.parse(result);
+      apiKey.value = key;
+      apiSecret.value = secret;
+    };
+
+    const saveBinance = async () => {
+      await ipcRenderer.invoke(
+        "binanceSetKey",
+        JSON.stringify({
+          key: apiKey.value,
+          secret: apiSecret.value,
+        })
+      );
+
+      binancePrompt.value = false;
+    };
+
+    getBinance();
+
+    return { binancePrompt, apiKey, apiSecret, saveBinance };
+  },
 });
 </script>
