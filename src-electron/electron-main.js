@@ -1,4 +1,12 @@
-import { app, BrowserWindow, nativeTheme, Tray, ipcMain, Menu } from "electron";
+import {
+  app,
+  BrowserWindow,
+  nativeTheme,
+  Tray,
+  ipcMain,
+  Menu,
+  powerMonitor,
+} from "electron";
 import path from "path";
 import os from "os";
 import ansi from "ansicolor";
@@ -127,7 +135,30 @@ function createWindow() {
   );
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: "Sample",
+        submenu: [
+          { label: "About App", selector: "orderFrontStandardAboutPanel:" },
+          {
+            label: "Quit",
+            accelerator: "CmdOrCtrl+Q",
+            click: function () {
+              // Nah nah nah... we are not quitting
+              isQuiting = false;
+              mainWindow.hide();
+              app.dock.hide();
+            },
+          },
+        ],
+      },
+    ])
+  );
+});
 app.on("before-quit", function () {
   isQuiting = true;
 });
@@ -139,11 +170,11 @@ ipcMain.on("price-change", async (event, _prices) => {
 
   for (const [key, value] of Object.entries(prices)) {
     if (value.d > 0) {
-      title.push(`${ansi.black(key)}:${ansi.green(value.lp)}`);
+      title.push(ansi.black(`${key}:${ansi.green(value.lp)}`));
     } else if (value.d === 0) {
-      title.push(`${ansi.black(key)}:${ansi.black(value.lp)}`);
+      title.push(ansi.black(`${key}:${ansi.black(value.lp)}`));
     } else {
-      title.push(`${ansi.black(key)}:${ansi.red(value.lp)}`);
+      title.push(ansi.black(`${key}:${ansi.red(value.lp)}`));
     }
   }
   tray.setTitle(title.join(" "), { fontType: "monospacedDigit" });
@@ -185,4 +216,17 @@ app.on("activate", () => {
   if (mainWindow === null) {
     createWindow();
   }
+});
+
+powerMonitor.on("suspend", () => {
+  ipcMain.emit("computer-suspend");
+});
+
+powerMonitor.on("resume", () => {
+  ipcMain.emit("computer-resume");
+});
+
+powerMonitor.on("shutdown", () => {
+  isQuiting = true;
+  app.quit();
 });

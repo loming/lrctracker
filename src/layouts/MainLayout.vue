@@ -60,7 +60,6 @@ export default defineComponent({
 
     const getBinance = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
-      console.log(result);
       let { key, secret } = JSON.parse(result);
       apiKey.value = key;
       apiSecret.value = secret;

@@ -60,7 +60,7 @@ import {
   onBeforeUnmount,
   nextTick,
 } from "vue";
-const { ipcRenderer } = window.electron;
+const { ipcRenderer, binanceGet } = window.electron;
 // import { WsAPI, UserAPI, ChainId } from "@loopring-web/loopring-sdk";
 import { createChart, CrosshairMode } from "lightweight-charts";
 // import { binance_api } from "boot/axios";
@@ -79,6 +79,7 @@ export default defineComponent({
     });
 
     let binanceId = 1;
+    let binance = null;
 
     const getTimestamp = (timestamp) => {
       return timestamp / 1000;
@@ -308,7 +309,7 @@ export default defineComponent({
       ws.onclose = (event) => {
         ws.removeEventListener("message", onMessage);
         setTimeout(function () {
-          setupBinance();
+          binance = setupBinance();
         }, 1000);
       };
 
@@ -321,7 +322,7 @@ export default defineComponent({
         ws.close();
       };
 
-      return { subKlines, subscribe, unSubscribe };
+      return { ws, subKlines, subscribe, unSubscribe };
     };
 
     // SETUP Loopring
@@ -456,18 +457,35 @@ export default defineComponent({
       });
       // volumeSeries.setData(this.volumes.value);
     };
+
+    const onSuspend = () => {
+      if (binance && binance.ws) {
+        binance.ws.close();
+      }
+    };
+
+    const onResume = () => {
+      binance = setupBinance();
+    };
+
     const onResize = () => {
       chart.resize(innerWidth, innerHeight - 30, true);
 
       console.log("width", "height", innerWidth, innerHeight);
     };
 
-    onBeforeUnmount((_) => removeEventListener("resize", onResize));
+    onBeforeUnmount((_) => {
+      removeEventListener("resize", onResize);
+      // ipcRenderer.removeEventListener("computer-suspend", onSuspend);
+      // ipcRenderer.removeEventListener("computer-resume", onResume);
+    });
     onMounted(() => {
       addEventListener("resize", onResize);
       addEventListener("online", () => {
-        setupBinance();
+        binance = setupBinance();
       });
+      // ipcRenderer.on("computer-suspend", onSuspend);
+      // ipcRenderer.on("computer-resume", onResume);
 
       nextTick(function () {
         // Code that will run only after the
@@ -477,7 +495,8 @@ export default defineComponent({
     });
 
     // setupLoopRing();
-    const binance = setupBinance();
+    binance = setupBinance();
+    // const binance = setupBinance();
 
     return {
       prices,
