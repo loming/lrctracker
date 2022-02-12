@@ -173,6 +173,7 @@ export default defineComponent({
     var candleSeries = null;
     var volumeSeries = null;
     var chart = null;
+    var chartHeightDiff = 0;
 
     // SETUP Loopring
     // const lr_prices = ref({
@@ -256,9 +257,11 @@ export default defineComponent({
     // };
 
     const setupChart = () => {
+      chartHeightDiff = innerHeight - chartDiv.value.clientHeight;
+
       chart = createChart(chartDiv.value, {
-        width: innerWidth,
-        height: innerHeight - 30,
+        width: chartDiv.value.clientWidth, //innerWidth
+        height: chartDiv.value.clientHeight, //innerHeight - 30,
         crosshair: {
           mode: CrosshairMode.Normal,
         },
@@ -318,9 +321,7 @@ export default defineComponent({
     };
 
     const onResize = () => {
-      chart.resize(innerWidth, innerHeight - 30, true);
-
-      console.log("width", "height", innerWidth, innerHeight);
+      chart.resize(innerWidth, innerHeight - chartHeightDiff, true);
     };
 
     onBeforeUnmount((_) => {

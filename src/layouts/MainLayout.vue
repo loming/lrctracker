@@ -58,7 +58,7 @@ export default defineComponent({
     let apiKey = ref("");
     let apiSecret = ref("");
 
-    const getBinance = async () => {
+    const getBinanceKey = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
       let { key, secret } = JSON.parse(result);
       apiKey.value = key;
@@ -77,7 +77,7 @@ export default defineComponent({
       binancePrompt.value = false;
     };
 
-    getBinance();
+    getBinanceKey();
 
     return { binancePrompt, apiKey, apiSecret, saveBinance };
   },

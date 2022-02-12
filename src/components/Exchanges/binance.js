@@ -19,7 +19,11 @@ const binanceGet = async (path, params) => {
   );
 };
 
-export function useBinance() {
+let binanceStore = {};
+
+export const useBinance = () => binanceStore;
+
+export function initBinance() {
   const connection_state = ref(CONNECTION_STATE.Disconnected);
 
   let ws = null;
@@ -249,7 +253,7 @@ export function useBinance() {
     return { lastPrice, lastChangePercentage, subscribe, unSubscribe };
   };
 
-  return {
+  binanceStore = {
     connectBinance,
     connection_state,
     setupKlines,
