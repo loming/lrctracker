@@ -72,18 +72,29 @@ export default defineComponent({
   name: "PageIndex",
   components: {},
   setup(props) {
-    const symbolName = ref("LRC / BTC");
-    const symbol = ref("lrcbtc");
+    const symbolName = ref("LRC / USDT");
+    const symbol = ref("lrcusdt");
     const defaultInterval = "1d";
     const binance = useBinance();
     const klinesHandler = binance.setupKlines(symbol.value);
     const priceHandler = binance.setupPrice(symbol.value);
 
     watchEffect(async () => {
-      console.log(binance.connection_state.value);
       if (binance.connection_state.value === CONNECTION_STATE.Connected) {
         klinesHandler.subscribe(defaultInterval);
         priceHandler.subscribe();
+      }
+    });
+
+    watchEffect(() => {
+      if (priceHandler.lastPrice.value) {
+        ipcRenderer.send(
+          "price-change",
+          JSON.stringify({
+            key: symbolName.value,
+            ...priceHandler.lastPrice.value,
+          })
+        );
       }
     });
 

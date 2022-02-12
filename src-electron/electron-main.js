@@ -163,20 +163,20 @@ app.on("before-quit", function () {
   isQuiting = true;
 });
 
-ipcMain.on("price-change", async (event, _prices) => {
+ipcMain.on("price-change", async (event, _price) => {
   event.reply("price-change-reply", "pong");
   let title = [];
-  let prices = JSON.parse(_prices);
+  let price = JSON.parse(_price);
 
-  for (const [key, value] of Object.entries(prices)) {
-    if (value.d > 0) {
-      title.push(ansi.black(`${key}:${ansi.green(value.lp)}`));
-    } else if (value.d === 0) {
-      title.push(ansi.black(`${key}:${ansi.black(value.lp)}`));
-    } else {
-      title.push(ansi.black(`${key}:${ansi.red(value.lp)}`));
-    }
+  // for (const [key, value] of Object.entries(prices)) {
+  if (price.d > 0) {
+    title.push(ansi.black(`${price.key}:${ansi.green(price.lp)}`));
+  } else if (value.d === 0) {
+    title.push(ansi.black(`${price.key}:${ansi.black(price.lp)}`));
+  } else {
+    title.push(ansi.black(`${price.key}:${ansi.red(price.lp)}`));
   }
+  // }
   tray.setTitle(title.join(" "), { fontType: "monospacedDigit" });
 });
 

@@ -107,8 +107,8 @@ export function useBinance() {
 
     const lastKline = ref({});
     const lastVolume = ref({});
-    const klines = ref({});
-    const volumes = ref({});
+    const klines = ref([]);
+    const volumes = ref([]);
 
     const subscribe = async (interval) => {
       // Get the KLine records from Binance's Restful API
