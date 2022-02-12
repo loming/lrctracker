@@ -1,8 +1,8 @@
 <template>
-  <q-page class="flex column">
-    <div class="flex row" style="position: relative; flex: 1">
+  <q-page class="flex">
+    <div class="flex column" style="position: relative; flex: 1">
       <div
-        class="column"
+        class="col"
         style="position: absolute; margin: 20px; z-index: 100; color: #ffffff"
       >
         <div class="column">
@@ -22,11 +22,11 @@
               {{ price.lp }}
             </div>
             <div
-              :style="`background-color: ${
+              :style="`color: ${
                 changePercentage > 0
                   ? 'rgba(0, 150, 136, 0.8)'
                   : 'rgba(255,82,82, 0.8)'
-              }; padding 10px; border-radius: 4px; margin-left: 20px`"
+              }; padding 10px; border-radius: 4px; margin-left: 20px; font-weight: bold;`"
             >
               {{ changePercentage }}%
             </div>
@@ -49,7 +49,7 @@
           </q-btn>
         </div>
       </div>
-      <div ref="chartDiv" style="flex: 1; background-color: #131722"></div>
+      <div class="col" ref="chartDiv" style="background-color: #131722"></div>
     </div>
   </q-page>
 </template>

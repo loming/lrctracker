@@ -1,27 +1,27 @@
 <template>
-  <q-page class="flex column">
+  <q-page class="flex row" style="height: 1px">
     <q-tabs
       v-model="selectedTab"
       no-caps
+      vertical
       align="left"
-      class="bg-black text-white shadow-2"
+      class="full-height text-white shadow-2 mdi-border-right q-pa-md"
+      style="background-color: #131722"
     >
-      <q-tab
-        v-for="(value, key) in tabs"
-        :key="key"
-        :name="key"
-        :label="value + showPrice(priceRefs[key])"
-      />
+      <q-tab v-for="(value, key) in tabs" :key="key" :name="key">
+        <div>{{ value }}</div>
+        <div v-if="key !== selectedTab">{{ showPrice(priceRefs[key]) }}</div>
+      </q-tab>
     </q-tabs>
-    <q-tab-panels v-model="selectedTab" animated keep-alive>
+    <q-tab-panels v-model="selectedTab" animated keep-alive class="col">
       <q-tab-panel
         v-for="(value, key) in tabs"
         :key="key"
         :name="key"
-        :label="value"
         class="q-pa-none"
       >
         <k-line-view
+          v-if="isConnected"
           :symbol="key"
           :symbol-name="value"
           :show-in-tray="favouriteSymbol === key"
@@ -33,8 +33,9 @@
 </template>
 
 <script>
-import { defineComponent, ref, reactive, toRefs } from "vue";
+import { defineComponent, ref, reactive, computed } from "vue";
 import KLineView from "src/components/KLineView.vue";
+import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
 
 export default defineComponent({
   name: "PageIndex",
@@ -60,7 +61,7 @@ export default defineComponent({
     };
     const showPrice = (data) => {
       if (data) {
-        return ` ${data.lp}`;
+        return `${data.lp}`;
       }
 
       return "";
@@ -73,6 +74,9 @@ export default defineComponent({
       setPriceRef,
       priceRefs: priceRefs,
       showPrice,
+      isConnected: computed(
+        () => useBinance().connection_state.value === CONNECTION_STATE.Connected
+      ),
     };
   },
 });
