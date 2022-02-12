@@ -206,6 +206,10 @@ ipcMain.handle("binanceSetKey", async (event, arg) => {
   }
 });
 
+ipcMain.handle("binanceAccountInfo", async (event, arg) => {
+  return JSON.stringify(await binanceClient.accountInfo());
+});
+
 app.on("window-all-closed", () => {
   if (platform !== "darwin") {
     app.quit();

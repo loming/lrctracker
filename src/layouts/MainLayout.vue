@@ -9,8 +9,21 @@
         padding-right: 16px;
         color: #ffffff;
         background-color: #131722;
+        padding-left: 80px;
       "
     >
+      <q-scroll-area class="col">
+        <div class="row no-wrap">
+          <div
+            v-for="coin in balances"
+            :key="coin.asset"
+            class="q-pa-sm text-amber"
+            style="white-space: nowrap"
+          >
+            {{ coin.asset }} - {{ coin.free }}
+          </div>
+        </div>
+      </q-scroll-area>
       <q-space />
       <q-btn
         round
@@ -47,7 +60,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watchEffect } from "vue";
 const { ipcRenderer } = window.electron;
 
 export default defineComponent({
@@ -57,6 +70,8 @@ export default defineComponent({
     let binancePrompt = ref(false);
     let apiKey = ref("");
     let apiSecret = ref("");
+    const accountInfo = ref({});
+    const balances = ref([]);
 
     const getBinanceKey = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
@@ -79,7 +94,23 @@ export default defineComponent({
 
     getBinanceKey();
 
-    return { binancePrompt, apiKey, apiSecret, saveBinance };
+    const getAccountInfo = async () => {
+      accountInfo.value = JSON.parse(
+        await ipcRenderer.invoke("binanceAccountInfo")
+      );
+      balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
+
+      console.log(balances.value);
+    };
+
+    watchEffect(() => {
+      if (apiKey.value !== "") {
+        getAccountInfo();
+      }
+    });
+
+    //await client.accountCoins()
+    return { binancePrompt, apiKey, apiSecret, saveBinance, balances };
   },
 });
 </script>
