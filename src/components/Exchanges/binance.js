@@ -1,4 +1,4 @@
-import { ref, reactive } from "vue";
+import { ref, reactive, nextTick } from "vue";
 const { ipcRenderer } = window.electron;
 
 export const CONNECTION_STATE = {
@@ -19,7 +19,28 @@ const binanceGet = async (path, params) => {
   );
 };
 
-let binanceStore = {};
+let binanceStore = {
+  connectBinance: () => {},
+  connection_state: CONNECTION_STATE.Disconnected,
+  setupKlines: () => {
+    return {
+      klines: ref([]),
+      volumes: ref([]),
+      lastKline: ref({}),
+      lastVolume: ref({}),
+      subscribe: () => {},
+      unSubscribe: () => {},
+    };
+  },
+  setupPrice: () => {
+    return {
+      lastPrice: ref({}),
+      lastChangePercentage: ref(0),
+      subscribe: () => {},
+      unSubscribe: () => {},
+    };
+  },
+};
 
 export const useBinance = () => binanceStore;
 
@@ -63,23 +84,34 @@ export function initBinance() {
 
   const _subscribe = (params) => {
     console.log("Subscribing", params);
-    ws.send(
-      JSON.stringify({
-        method: "SUBSCRIBE",
-        params: params,
-        id: binanceId++,
-      })
-    );
+
+    if (connection_state.value === CONNECTION_STATE.Connected) {
+      nextTick(() => {
+        ws.send(
+          JSON.stringify({
+            method: "SUBSCRIBE",
+            params: params,
+            id: binanceId++,
+          })
+        );
+      });
+    }
   };
 
   const _unSubscribe = (params) => {
-    ws.send(
-      JSON.stringify({
-        method: "UNSUBSCRIBE",
-        params: params,
-        id: binanceId++,
-      })
-    );
+    console.log("Unsubscribing", params);
+
+    if (connection_state.value === CONNECTION_STATE.Connected) {
+      nextTick(() => {
+        ws.send(
+          JSON.stringify({
+            method: "UNSUBSCRIBE",
+            params: params,
+            id: binanceId++,
+          })
+        );
+      });
+    }
   };
 
   const onMessage = (event) => {
@@ -193,10 +225,12 @@ export function initBinance() {
     const unSubscribe = (interval) => {
       const _topicName = `${_lowerSymbol}@kline_${interval}`;
 
-      // De-register the processor for websocket's messages
-      delete msgProcessors[_topicName];
+      if (msgProcessors[_topicName]) {
+        // De-register the processor for websocket's messages
+        delete msgProcessors[_topicName];
 
-      _unSubscribe([_topicName]);
+        _unSubscribe([_topicName]);
+      }
     };
 
     return { klines, volumes, lastKline, lastVolume, subscribe, unSubscribe };
@@ -226,7 +260,7 @@ export function initBinance() {
 
       const tickerProcessor = (data) => {
         if (data.e === "24hrTicker") {
-          if (lastPrice.value.d === 0) {
+          if (lastPrice.value.lp === 0) {
             lastPrice.value = {
               lp: parseFloat(data.c).toFixed(6),
               d: 0,
@@ -243,11 +277,13 @@ export function initBinance() {
     };
 
     const unSubscribe = () => {
-      // De-register the processor for websocket's messages
-      delete msgProcessors[`${_lowerSymbol}@ticker`];
-      delete msgProcessors[`${_lowerSymbol}@aggTrade`];
+      if (msgProcessors[`${_lowerSymbol}@ticker`]) {
+        // De-register the processor for websocket's messages
+        delete msgProcessors[`${_lowerSymbol}@ticker`];
+        delete msgProcessors[`${_lowerSymbol}@aggTrade`];
 
-      _unSubscribe([`${_lowerSymbol}@ticker`, `${_lowerSymbol}@aggTrade`]);
+        _unSubscribe([`${_lowerSymbol}@ticker`, `${_lowerSymbol}@aggTrade`]);
+      }
     };
 
     return { lastPrice, lastChangePercentage, subscribe, unSubscribe };

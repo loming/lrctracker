@@ -3,9 +3,10 @@
 </template>
 <script>
 import { defineComponent } from "vue";
-import { initBinance } from "components/Exchanges/binance";
+import { initBinance, useBinance } from "components/Exchanges/binance";
 
 initBinance();
+useBinance().connectBinance();
 
 export default defineComponent({
   name: "App",

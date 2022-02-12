@@ -171,7 +171,7 @@ ipcMain.on("price-change", async (event, _price) => {
   // for (const [key, value] of Object.entries(prices)) {
   if (price.d > 0) {
     title.push(ansi.black(`${price.key}:${ansi.green(price.lp)}`));
-  } else if (value.d === 0) {
+  } else if (price.d === 0) {
     title.push(ansi.black(`${price.key}:${ansi.black(price.lp)}`));
   } else {
     title.push(ansi.black(`${price.key}:${ansi.red(price.lp)}`));
