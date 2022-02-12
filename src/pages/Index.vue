@@ -4,42 +4,42 @@
       class="column"
       style="position: absolute; margin: 20px; z-index: 100; color: #ffffff"
     >
-      <div class="row">
-        <div v-for="(item, key) in prices" :key="key">
-          <div class="row">
-            <div style="font-size: 24px">{{ key }}</div>
+      <div class="column">
+        <div class="row">
+          <div style="font-size: 24px">{{ symbolName }}</div>
+        </div>
+        <div class="flex-center row">
+          <div
+            :style="`font-size: 22px; font-weight: bold; color: ${
+              price.d > 0
+                ? 'rgba(0, 250, 136, 0.8)'
+                : price.d < 0
+                ? 'rgba(255,82,82, 0.8)'
+                : '#ffffff'
+            }`"
+          >
+            {{ price.lp }}
           </div>
-          <div class="flex-center row">
-            <div
-              :style="`font-size: 22px; font-weight: bold; color: ${
-                item.d > 0
-                  ? 'rgba(0, 250, 136, 0.8)'
-                  : item.d < 0
-                  ? 'rgba(255,82,82, 0.8)'
-                  : '#ffffff'
-              }`"
-            >
-              {{ item.lp }}
-            </div>
-            <div
-              :style="`background-color: ${
-                item.cp > 0 ? 'rgba(0, 150, 136, 0.8)' : 'rgba(255,82,82, 0.8)'
-              }; padding 10px; border-radius: 4px; margin-left: 20px`"
-            >
-              {{ item.cp }}%
-            </div>
+          <div
+            :style="`background-color: ${
+              changePercentage > 0
+                ? 'rgba(0, 150, 136, 0.8)'
+                : 'rgba(255,82,82, 0.8)'
+            }; padding 10px; border-radius: 4px; margin-left: 20px`"
+          >
+            {{ changePercentage }}%
           </div>
         </div>
       </div>
       <div style="margin-top: 10px">
-        <q-btn color="secondary" :label="durations[selectedDuration]">
+        <q-btn color="secondary" :label="durations[selectedInterval]">
           <q-menu auto-close>
             <q-list style="min-width: 100px">
               <q-item
                 v-for="(item, key) in durations"
                 :key="key"
                 clickable
-                @click="selectDuration(key)"
+                @click="selectInterval(key)"
               >
                 <q-item-section>{{ item }}</q-item-section>
               </q-item>
@@ -56,36 +56,70 @@
 import {
   defineComponent,
   ref,
+  toRefs,
+  reactive,
   onMounted,
   onBeforeUnmount,
   nextTick,
+  watchEffect,
 } from "vue";
-const { ipcRenderer, binanceGet } = window.electron;
+const { ipcRenderer } = window.electron;
 // import { WsAPI, UserAPI, ChainId } from "@loopring-web/loopring-sdk";
 import { createChart, CrosshairMode } from "lightweight-charts";
-// import { binance_api } from "boot/axios";
+import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
 
 export default defineComponent({
   name: "PageIndex",
   components: {},
   setup(props) {
-    const prices = ref({
-      LRCUSDT: {
-        lt: 0, //last tick
-        lp: 0, //last price
-        cp: 0, //change percent
-        d: 0, //differents
-      },
+    const symbolName = ref("LRC / BTC");
+    const symbol = ref("lrcbtc");
+    const defaultInterval = "1d";
+    const binance = useBinance();
+    const klinesHandler = binance.setupKlines(symbol.value);
+    const priceHandler = binance.setupPrice(symbol.value);
+
+    watchEffect(async () => {
+      console.log(binance.connection_state.value);
+      if (binance.connection_state.value === CONNECTION_STATE.Connected) {
+        klinesHandler.subscribe(defaultInterval);
+        priceHandler.subscribe();
+      }
     });
 
-    let binanceId = 1;
-    let binance = null;
+    watchEffect(() => {
+      if (klinesHandler.klines.value) {
+        if (candleSeries) {
+          candleSeries.setData(klinesHandler.klines.value);
+        }
+      }
+    });
 
-    const getTimestamp = (timestamp) => {
-      return timestamp / 1000;
-    };
+    watchEffect(() => {
+      if (klinesHandler.volumes.value) {
+        if (volumeSeries) {
+          volumeSeries.setData(klinesHandler.volumes.value);
+        }
+      }
+    });
 
-    const selectedDuration = ref("1d");
+    watchEffect(() => {
+      if (klinesHandler.lastKline.value) {
+        if (candleSeries) {
+          candleSeries.update(klinesHandler.lastKline.value);
+        }
+      }
+    });
+
+    watchEffect(() => {
+      if (klinesHandler.lastVolume.value) {
+        if (volumeSeries) {
+          volumeSeries.update(klinesHandler.lastVolume.value);
+        }
+      }
+    });
+
+    const selectedInterval = ref("1d");
     const durations = {
       "1m": "1 minute",
       "3m": "3 minutes",
@@ -103,17 +137,20 @@ export default defineComponent({
       "1w": "1 week",
       "1M": "1 month",
     };
-    const selectDuration = (key) => {
-      binance.unSubscribe([`lrcusdt@kline_${selectedDuration.value}`]);
-      selectedDuration.value = key;
-      binance.subKlines(`LRCUSDT`, key);
+    const selectInterval = async (key) => {
+      klinesHandler.unSubscribe(selectedInterval.value);
+
+      selectedInterval.value = key;
+      if (binance.connection_state.value === CONNECTION_STATE.Connected) {
+        klinesHandler.subscribe(key);
+      }
 
       if (chart) {
         chart.applyOptions({
           timeScale: {
             timeVisible:
-              selectedDuration.value.indexOf("m") > 0 ||
-              selectedDuration.value.indexOf("h") > 0
+              selectedInterval.value.indexOf("m") > 0 ||
+              selectedInterval.value.indexOf("h") > 0
                 ? true
                 : false,
           },
@@ -121,209 +158,10 @@ export default defineComponent({
       }
     };
 
-    const klines = ref([]);
-    const volumes = ref([]);
     const chartDiv = ref(null);
     var candleSeries = null;
     var volumeSeries = null;
     var chart = null;
-
-    const setupBinance = () => {
-      const ws = new WebSocket("wss://stream.binance.com:9443/stream");
-
-      const subKlines = async (symbol, interval) => {
-        const result = JSON.parse(
-          await ipcRenderer.invoke(
-            "binanceGet",
-            JSON.stringify({
-              path: "/api/v3/klines",
-              params: {
-                params: {
-                  symbol,
-                  interval,
-                },
-              },
-            })
-          )
-        );
-
-        klines.value = result.map((r) => {
-          return {
-            time: getTimestamp(parseInt(r[0])), // Open time
-            open: parseFloat(r[1]), // Open
-            high: parseFloat(r[2]), // High
-            low: parseFloat(r[3]), // Low
-            close: parseFloat(r[4]), // Close
-            // msg.data.v, // Volume
-            // msg.data.T, // Close time
-            // msg.data.q, // Quote asset volume
-            // msg.data.n, // Number of trades
-            // msg.data.V, // Taker buy base asset volume
-            // msg.data.Q, // Taker buy quote asset volume
-            // msg.data.B, // Ignore.
-          };
-        });
-        volumes.value = result.map((r) => {
-          return {
-            time: getTimestamp(parseInt(r[0])),
-            value: parseFloat(r[5]),
-            color:
-              parseFloat(r[4]) - parseFloat(r[1]) > 0
-                ? "rgba(0, 150, 136, 0.8)"
-                : "rgba(255,82,82, 0.8)",
-          };
-        });
-
-        if (candleSeries) {
-          candleSeries.setData(klines.value);
-          volumeSeries.setData(volumes.value);
-        }
-
-        subscribe([`${symbol}@kline_${selectedDuration.value}`.toLowerCase()]);
-      };
-
-      const subscribe = (params) => {
-        console.log("Subscribing", params);
-        ws.send(
-          JSON.stringify({
-            method: "SUBSCRIBE",
-            params: params,
-            id: binanceId++,
-          })
-        );
-      };
-
-      const unSubscribe = (params) => {
-        ws.send(
-          JSON.stringify({
-            method: "UNSUBSCRIBE",
-            params: params,
-            id: binanceId++,
-          })
-        );
-      };
-
-      const onMessage = (event) => {
-        try {
-          if (event && event.data === "PING") {
-            ws.send("PONG");
-          } else if (event && event.data === "ping") {
-            ws.send("pong");
-          }
-
-          const msg = JSON.parse(event.data);
-          if (msg.data) {
-            if (msg.data.e === "24hrTicker") {
-              prices.value[msg.data.s] = {
-                lt: parseFloat(msg.data.c), //last tick
-                lp: parseFloat(msg.data.c).toFixed(4), //last price
-                cp: parseFloat(msg.data.P).toFixed(2), //change percent
-                d: parseFloat(msg.data.c) - prices.value[msg.data.s].lt, //differents
-              };
-              ipcRenderer.send("price-change", JSON.stringify(prices.value));
-            } else if (msg.data.e === "aggTrade") {
-              if (prices.value[msg.data.s]) {
-                prices.value[msg.data.s].lp = parseFloat(msg.data.p).toFixed(4);
-                prices.value[msg.data.s].d =
-                  parseFloat(msg.data.p) - prices.value[msg.data.s].lp;
-              }
-              ipcRenderer.send("price-change", JSON.stringify(prices.value));
-            } else if (msg.data.e === "kline") {
-              if (klines.value.length > 0) {
-                let kValues = msg.data.k;
-                if (
-                  klines.value[klines.value.length - 1].time ==
-                  getTimestamp(parseInt(kValues.t))
-                ) {
-                  klines.value[klines.value.length - 1] = {
-                    time: getTimestamp(parseInt(kValues.t)), // Open time
-                    open: parseFloat(kValues.o), // Open
-                    high: parseFloat(kValues.h), // High
-                    low: parseFloat(kValues.l), // Low
-                    close: parseFloat(kValues.c), // Close
-                    // msg.data.v, // Volume
-                    // msg.data.T, // Close time
-                    // msg.data.q, // Quote asset volume
-                    // msg.data.n, // Number of trades
-                    // msg.data.V, // Taker buy base asset volume
-                    // msg.data.Q, // Taker buy quote asset volume
-                    // msg.data.B, // Ignore.
-                  };
-                  volumes.value[volumes.value.length - 1] = {
-                    time: getTimestamp(parseInt(kValues.t)), // Open time
-                    value: parseFloat(kValues.v), // Volume
-                    color:
-                      parseFloat(kValues.c) - parseFloat(kValues.o) > 0
-                        ? "rgba(0, 150, 136, 0.8)"
-                        : "rgba(255,82,82, 0.8)",
-                  };
-                } else {
-                  klines.value.push({
-                    time: getTimestamp(parseInt(kValues.t)), // Open time
-                    open: parseFloat(kValues.o), // Open
-                    high: parseFloat(kValues.h), // High
-                    low: parseFloat(kValues.l), // Low
-                    close: parseFloat(kValues.c), // Close
-                    // msg.data.v, // Volume
-                    // msg.data.T, // Close time
-                    // msg.data.q, // Quote asset volume
-                    // msg.data.n, // Number of trades
-                    // msg.data.V, // Taker buy base asset volume
-                    // msg.data.Q, // Taker buy quote asset volume
-                    // msg.data.B, // Ignore.
-                  });
-
-                  volumes.value.push({
-                    time: getTimestamp(parseInt(kValues.t)), // Open time
-                    value: parseFloat(kValues.v), // Volume
-                    color:
-                      parseFloat(kValues.c) - parseFloat(kValues.o) > 0
-                        ? "rgba(0, 150, 136, 0.8)"
-                        : "rgba(255,82,82, 0.8)",
-                  });
-                }
-
-                if (candleSeries) {
-                  candleSeries.update(klines.value[klines.value.length - 1]);
-                }
-                if (volumeSeries) {
-                  volumeSeries.update(volumes.value[volumes.value.length - 1]);
-                }
-              }
-            } else {
-              console.log("unhandled topic", msg);
-            }
-          } else {
-            console.log(msg);
-          }
-        } catch (err) {
-          console.log(err);
-        }
-      };
-
-      ws.onopen = (event) => {
-        ws.addEventListener("message", onMessage);
-        subscribe(["lrcusdt@ticker", "lrcusdt@aggTrade"]);
-        subKlines(`LRCUSDT`, selectedDuration.value);
-      };
-      ws.onclose = (event) => {
-        ws.removeEventListener("message", onMessage);
-        setTimeout(function () {
-          binance = setupBinance();
-        }, 1000);
-      };
-
-      ws.onerror = function (err) {
-        console.error(
-          "Socket encountered error: ",
-          err.message,
-          "Closing socket"
-        );
-        ws.close();
-      };
-
-      return { ws, subKlines, subscribe, unSubscribe };
-    };
 
     // SETUP Loopring
     // const lr_prices = ref({
@@ -459,13 +297,13 @@ export default defineComponent({
     };
 
     const onSuspend = () => {
-      if (binance && binance.ws) {
-        binance.ws.close();
-      }
+      // if (binance && binance.ws) {
+      //   binance.ws.close();
+      // }
     };
 
     const onResume = () => {
-      binance = setupBinance();
+      binance.connectBinance();
     };
 
     const onResize = () => {
@@ -482,7 +320,7 @@ export default defineComponent({
     onMounted(() => {
       addEventListener("resize", onResize);
       addEventListener("online", () => {
-        binance = setupBinance();
+        binance.connectBinance();
       });
       // ipcRenderer.on("computer-suspend", onSuspend);
       // ipcRenderer.on("computer-resume", onResume);
@@ -494,17 +332,16 @@ export default defineComponent({
       });
     });
 
-    // setupLoopRing();
-    binance = setupBinance();
-    // const binance = setupBinance();
+    binance.connectBinance();
 
     return {
-      prices,
+      symbolName,
+      symbol,
+      price: priceHandler.lastPrice,
+      changePercentage: priceHandler.lastChangePercentage,
       durations,
-      selectedDuration,
-      selectDuration,
-      klines,
-      volumes,
+      selectedInterval,
+      selectInterval,
       chartDiv,
     };
   },

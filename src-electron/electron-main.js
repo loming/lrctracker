@@ -138,26 +138,26 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  Menu.setApplicationMenu(
-    Menu.buildFromTemplate([
-      {
-        label: "Sample",
-        submenu: [
-          { label: "About App", selector: "orderFrontStandardAboutPanel:" },
-          {
-            label: "Quit",
-            accelerator: "CmdOrCtrl+Q",
-            click: function () {
-              // Nah nah nah... we are not quitting
-              isQuiting = false;
-              mainWindow.hide();
-              app.dock.hide();
-            },
-          },
-        ],
-      },
-    ])
-  );
+  // Menu.setApplicationMenu(
+  //   Menu.buildFromTemplate([
+  //     {
+  //       label: "Sample",
+  //       submenu: [
+  //         { label: "About App", selector: "orderFrontStandardAboutPanel:" },
+  //         {
+  //           label: "Quit",
+  //           accelerator: "CmdOrCtrl+Q",
+  //           click: function () {
+  //             // Nah nah nah... we are not quitting
+  //             isQuiting = false;
+  //             mainWindow.hide();
+  //             app.dock.hide();
+  //           },
+  //         },
+  //       ],
+  //     },
+  //   ])
+  // );
 });
 app.on("before-quit", function () {
   isQuiting = true;
