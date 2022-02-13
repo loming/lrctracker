@@ -1,19 +1,16 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <q-header
-      class="flex"
       elevated
       style="
         -webkit-app-region: drag;
-        padding: 8px;
-        padding-right: 16px;
         color: #ffffff;
         background-color: #131722;
-        padding-left: 80px;
       "
     >
-      <q-scroll-area class="col">
-        <div class="row no-wrap">
+      <q-toolbar style="padding-left: 80px; padding-right: 16px">
+        <!-- <q-scroll-area class="column bg-white" dark> -->
+        <div class="row no-wrap reverse">
           <div
             v-for="coin in shownBalance"
             :key="coin.asset"
@@ -23,15 +20,32 @@
             {{ coin.asset }} - {{ coin.free }}
           </div>
         </div>
-      </q-scroll-area>
-      <q-space />
-      <q-btn
-        round
-        push
-        size="12px"
-        icon="settings"
-        @click="binancePrompt = true"
-      />
+        <!-- </q-scroll-area> -->
+        <q-space />
+        <q-btn
+          v-if="isLoggedBinance"
+          :color="isShowTrade ? 'deep-orange' : 'green'"
+          push
+          @click="isShowTrade = !isShowTrade"
+        >
+          <div class="row items-center no-wrap">
+            <q-icon left :name="isShowTrade ? 'cancel' : 'check_circle'" />
+            <div class="text-center">
+              {{ isShowTrade ? "Hide" : "Show" }} Trade
+            </div>
+          </div>
+        </q-btn>
+        <q-btn
+          round
+          push
+          size="12px"
+          icon="settings"
+          @click="binancePrompt = true"
+        />
+      </q-toolbar>
+      <q-toolbar v-if="isShowTrade" inset>
+        <q-toolbar-title> <strong>Quasar</strong> Framework </q-toolbar-title>
+      </q-toolbar>
     </q-header>
 
     <q-page-container>
@@ -69,15 +83,16 @@ export default defineComponent({
   name: "MainLayout",
 
   setup() {
-    let binancePrompt = ref(false);
+    const binancePrompt = ref(false);
+
     let apiKey = ref("");
     let apiSecret = ref("");
     const accountInfo = ref({});
-    const balances = ref([]);
+    const balances = ref({});
 
     const main = useMainStore();
     // extract specific store properties
-    const { selectedPair } = storeToRefs(main);
+    const { isLoggedBinance, isShowTrade, selectedPair } = storeToRefs(main);
 
     const getBinanceKey = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
@@ -109,23 +124,58 @@ export default defineComponent({
           })
         )
       );
-      balances.value = accountInfo.value.balances;
+      accountInfo.value.balances.map((b) => {
+        balances.value[b.asset] = {
+          free: b.free,
+          locked: b.locked,
+        };
+      });
       // balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
     };
 
     watchEffect(() => {
       if (apiKey.value !== "") {
         getAccountInfo();
+        isLoggedBinance.value = true;
+      } else {
+        isLoggedBinance.value = false;
       }
     });
 
     const shownBalance = computed(() => {
-      return balances.value.filter((b) => {
-        return selectedPair.value.indexOf(b.asset) >= 0;
-      });
+      return Object.keys(balances.value).reduce((result, key) => {
+        if (selectedPair.value.indexOf(key) >= 0) {
+          result.push({ asset: key, free: balances.value[key].free });
+        }
+        return result;
+      }, []);
     });
+
+    // watchEffect(async () => {
+    //   if (isLoggedBinance.value) {
+    //     console.log(
+    //       await ipcRenderer.invoke(
+    //         "binanceClient",
+    //         JSON.stringify({
+    //           path: "myTrades",
+    //           params: {
+    //             symbol: "LRCUSDT",
+    //           },
+    //         })
+    //       )
+    //     );
+    //   }
+    // });
     //await client.accountCoins()
-    return { binancePrompt, apiKey, apiSecret, saveBinance, shownBalance };
+    return {
+      binancePrompt,
+      isShowTrade,
+      isLoggedBinance,
+      apiKey,
+      apiSecret,
+      saveBinance,
+      shownBalance,
+    };
   },
 });
 </script>

@@ -6,6 +6,9 @@ import { useLocalStorage } from "@vueuse/core";
 export const useMainStore = defineStore("main", {
   // a function that returns a fresh state
   state: () => ({
+    isLoggedBinance: useLocalStorage("isLoggedBinance", false),
+    isShowTrade: useLocalStorage("isShowTrade", false),
+    balances: useLocalStorage("balances", {}),
     selectedTab: useLocalStorage("selectedTab", "lrcusdt"),
     selectedPair: useLocalStorage("selectedPair", ["LRC", "USDT"]),
   }),

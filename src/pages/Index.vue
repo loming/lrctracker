@@ -43,7 +43,7 @@ import { defineComponent, ref, reactive, computed } from "vue";
 import KLineView from "components/KLineView.vue";
 import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
 import { useMainStore } from "stores/main.pinia";
-import { storeToRefs, mapWritableState } from "pinia";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   name: "PageIndex",

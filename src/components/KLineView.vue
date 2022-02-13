@@ -49,7 +49,14 @@
           </q-btn>
         </div>
       </div>
-      <div class="col" ref="chartDiv" style="background-color: #131722"></div>
+      <div class="col" style="position: relative; background-color: #131722">
+        <div
+          ref="chartDiv"
+          style="position: absolute; top: 0; bottom: 0; left: 0; right: 0"
+        >
+          <q-resize-observer @resize="onResize" />
+        </div>
+      </div>
     </div>
   </q-page>
 </template>
@@ -262,21 +269,23 @@ export default defineComponent({
       binance.connectBinance();
     };
 
-    const onResize = () => {
-      chart.resize(
-        innerWidth - chartWidthDiff,
-        innerHeight - chartHeightDiff,
-        true
-      );
+    const onResize = (size) => {
+      if (chart) {
+        chart.resize(
+          size.width,
+          size.height,
+          // innerWidth - chartWidthDiff,
+          // innerHeight - chartHeightDiff,
+          true
+        );
+      }
     };
 
     onBeforeUnmount((_) => {
-      removeEventListener("resize", onResize);
       // ipcRenderer.removeEventListener("computer-suspend", onSuspend);
       // ipcRenderer.removeEventListener("computer-resume", onResume);
     });
     onMounted(() => {
-      addEventListener("resize", onResize);
       addEventListener("online", () => {
         binance.connectBinance();
       });
@@ -300,6 +309,7 @@ export default defineComponent({
       selectedInterval,
       selectInterval,
       chartDiv,
+      onResize,
     };
 
     // SETUP Loopring
