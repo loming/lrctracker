@@ -17,7 +17,7 @@
             class="q-pa-sm text-amber"
             style="white-space: nowrap"
           >
-            {{ coin.asset }} - {{ coin.free }}
+            {{ coin.asset }} - <span class="blurry-text">{{ coin.free }}</span>
           </div>
         </div>
         <!-- </q-scroll-area> -->
@@ -44,7 +44,18 @@
         />
       </q-toolbar>
       <q-toolbar v-if="isShowTrade" inset>
-        <q-toolbar-title> <strong>Quasar</strong> Framework </q-toolbar-title>
+        <q-toolbar-title
+          ><q-img
+            src="~assets/icon.png"
+            spinner-color="white"
+            style="
+              height: 32px;
+              max-width: 32px;
+              margin-right: 10px;
+              margin-top: -5px;
+            "
+          /><strong>LRC</strong> Trader
+        </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
