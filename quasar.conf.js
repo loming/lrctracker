@@ -9,6 +9,7 @@
 /* eslint-env node */
 const ESLintPlugin = require("eslint-webpack-plugin");
 const { configure } = require("quasar/wrappers");
+const path = require("path");
 
 module.exports = configure(function (ctx) {
   return {
@@ -21,7 +22,7 @@ module.exports = configure(function (ctx) {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://quasar.dev/quasar-cli/boot-files
-    boot: [],
+    boot: ["pinia"],
 
     // https://quasar.dev/quasar-cli/quasar-conf-js#Property%3A-css
     css: ["app.scss"],
@@ -70,6 +71,11 @@ module.exports = configure(function (ctx) {
 
         const nodePolyfillWebpackPlugin = require("node-polyfill-webpack-plugin");
         chain.plugin("node-polyfill").use(nodePolyfillWebpackPlugin);
+
+        chain.resolve.alias.set(
+          "stores",
+          path.resolve(__dirname, "src/stores")
+        );
       },
     },
 

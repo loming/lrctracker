@@ -2,6 +2,7 @@
   <q-page class="flex row" style="height: 1px">
     <q-tabs
       v-model="selectedTab"
+      @update:model-value="onTabChanged"
       no-caps
       vertical
       align="left"
@@ -39,8 +40,10 @@
 
 <script>
 import { defineComponent, ref, reactive, computed } from "vue";
-import KLineView from "src/components/KLineView.vue";
+import KLineView from "components/KLineView.vue";
 import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
+import { useMainStore } from "stores/main.pinia";
+import { storeToRefs, mapWritableState } from "pinia";
 
 export default defineComponent({
   name: "PageIndex",
@@ -51,7 +54,17 @@ export default defineComponent({
       lrceth: ["LRC", "ETH"],
       lrcbtc: ["LRC", "BTC"],
     });
-    const selectedTab = ref("lrcusdt");
+
+    const mainStore = useMainStore();
+
+    // extract specific store properties
+    const { selectedTab, selectedPair } = storeToRefs(mainStore);
+
+    const onTabChanged = (newTab) => {
+      selectedPair.value = tabs.value[newTab];
+    };
+
+    // const selectedTab = ref("lrcusdt");
     const favouriteSymbol = ref("lrcusdt");
 
     const priceRefs = reactive({
@@ -75,6 +88,7 @@ export default defineComponent({
     return {
       tabs,
       selectedTab,
+      onTabChanged,
       favouriteSymbol,
       setPriceRef,
       priceRefs: priceRefs,

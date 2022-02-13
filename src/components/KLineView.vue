@@ -194,9 +194,11 @@ export default defineComponent({
     var candleSeries = null;
     var volumeSeries = null;
     var chart = null;
+    var chartWidthDiff = 0;
     var chartHeightDiff = 0;
 
     const setupChart = () => {
+      chartWidthDiff = innerWidth - chartDiv.value.clientWidth;
       chartHeightDiff = innerHeight - chartDiv.value.clientHeight;
 
       chart = createChart(chartDiv.value, {
@@ -261,7 +263,11 @@ export default defineComponent({
     };
 
     const onResize = () => {
-      chart.resize(innerWidth, innerHeight - chartHeightDiff, true);
+      chart.resize(
+        innerWidth - chartWidthDiff,
+        innerHeight - chartHeightDiff,
+        true
+      );
     };
 
     onBeforeUnmount((_) => {

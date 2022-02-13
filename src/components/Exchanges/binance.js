@@ -89,7 +89,7 @@ export function initBinance() {
   };
 
   const _subscribe = (params) => {
-    console.log("Subscribing", params);
+    // console.log("Subscribing", params);
 
     // Subscribe topics, filter out the duplicated topics
     const _params = params.filter((p) => {
@@ -115,7 +115,7 @@ export function initBinance() {
   };
 
   const _unSubscribe = (params) => {
-    console.log("Unsubscribing", params);
+    // console.log("Unsubscribing", params);
 
     subscribedTopics = subscribedTopics.filter((topic) => {
       return params.indexOf(topic) === -1;
@@ -150,7 +150,7 @@ export function initBinance() {
           console.log("unhandled topic", msg);
         }
       } else {
-        console.log(msg);
+        // console.log(msg);
       }
     } catch (err) {
       console.log(err);

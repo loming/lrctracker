@@ -15,12 +15,12 @@
       <q-scroll-area class="col">
         <div class="row no-wrap">
           <div
-            v-for="coin in balances"
+            v-for="coin in shownBalance"
             :key="coin.asset"
             class="q-pa-sm text-amber"
             style="white-space: nowrap"
           >
-            {{ coin.asset }} - <span class="blurry-text">{{ coin.free }}</span>
+            {{ coin.asset }} - {{ coin.free }}
           </div>
         </div>
       </q-scroll-area>
@@ -60,8 +60,10 @@
 </template>
 
 <script>
-import { defineComponent, ref, watchEffect } from "vue";
+import { defineComponent, ref, watchEffect, computed } from "vue";
 const { ipcRenderer } = window.electron;
+import { useMainStore } from "stores/main.pinia";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   name: "MainLayout",
@@ -72,6 +74,10 @@ export default defineComponent({
     let apiSecret = ref("");
     const accountInfo = ref({});
     const balances = ref([]);
+
+    const main = useMainStore();
+    // extract specific store properties
+    const { selectedPair } = storeToRefs(main);
 
     const getBinanceKey = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
@@ -98,9 +104,8 @@ export default defineComponent({
       accountInfo.value = JSON.parse(
         await ipcRenderer.invoke("binanceAccountInfo")
       );
-      balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
-
-      console.log(balances.value);
+      balances.value = accountInfo.value.balances;
+      // balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
     };
 
     watchEffect(() => {
@@ -109,8 +114,13 @@ export default defineComponent({
       }
     });
 
+    const shownBalance = computed(() => {
+      return balances.value.filter((b) => {
+        return selectedPair.value.indexOf(b.asset) >= 0;
+      });
+    });
     //await client.accountCoins()
-    return { binancePrompt, apiKey, apiSecret, saveBinance, balances };
+    return { binancePrompt, apiKey, apiSecret, saveBinance, shownBalance };
   },
 });
 </script>
