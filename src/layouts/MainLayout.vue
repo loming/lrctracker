@@ -20,7 +20,7 @@
             class="q-pa-sm text-amber"
             style="white-space: nowrap"
           >
-            {{ coin.asset }} - {{ coin.free }}
+            {{ coin.asset }} - <span class="blurry-text">{{ coin.free }}</span>
           </div>
         </div>
       </q-scroll-area>

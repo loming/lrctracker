@@ -1,1 +1,14 @@
 // app global css in SCSS form
+.blurry-text {
+  color: transparent;
+  text-shadow: 0 0 7px rgba(255, 193, 7, 0.5);
+}
+
+.tab-active {
+  font-weight: bolder;
+  font-size: 18px;
+}
+
+.tab-normal {
+  font-size: 16px;
+}

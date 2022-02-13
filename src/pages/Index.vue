@@ -8,8 +8,13 @@
       class="full-height text-white shadow-2 mdi-border-right q-pa-md"
       style="background-color: #131722"
     >
-      <q-tab v-for="(value, key) in tabs" :key="key" :name="key">
-        <div>{{ value }}</div>
+      <q-tab
+        v-for="(value, key) in tabs"
+        :key="key"
+        :name="key"
+        :class="key !== selectedTab ? 'tab-normal' : 'tab-active'"
+      >
+        <div>{{ `${value[0]} / ${value[1]}` }}</div>
         <div v-if="key !== selectedTab">{{ showPrice(priceRefs[key]) }}</div>
       </q-tab>
     </q-tabs>
@@ -23,7 +28,7 @@
         <k-line-view
           v-if="isConnected"
           :symbol="key"
-          :symbol-name="value"
+          :symbol-name="`${value[0]} / ${value[1]}`"
           :show-in-tray="favouriteSymbol === key"
           :ref="setPriceRef"
         />
@@ -42,9 +47,9 @@ export default defineComponent({
   components: { KLineView },
   setup(props) {
     const tabs = ref({
-      lrcusdt: "LRC / USDT",
-      lrceth: "LRC / ETH",
-      lrcbtc: "LRC / BTC",
+      lrcusdt: ["LRC", "USDT"],
+      lrceth: ["LRC", "ETH"],
+      lrcbtc: ["LRC", "BTC"],
     });
     const selectedTab = ref("lrcusdt");
     const favouriteSymbol = ref("lrcusdt");

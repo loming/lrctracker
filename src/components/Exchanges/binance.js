@@ -51,6 +51,7 @@ export function initBinance() {
 
   const msgProcessors = {}; // It's for subscribe function to process the websocket's message, and return it's own reactive object
   let binanceId = 1;
+  let subscribedTopics = [];
 
   const connectBinance = () => {
     connection_state.value = CONNECTION_STATE.Disconnected;
@@ -68,6 +69,11 @@ export function initBinance() {
         connection_state.value = CONNECTION_STATE.Connecting;
         // binance = setupBinance();
         ws = new WebSocket("wss://stream.binance.com:9443/stream");
+
+        // resubscribe topics in reconnect
+        if (subscribedTopics.length > 0) {
+          _subscribe(subscribedTopics);
+        }
       }, 1000);
     };
 
@@ -85,6 +91,12 @@ export function initBinance() {
   const _subscribe = (params) => {
     console.log("Subscribing", params);
 
+    // Subscribe topics, filter out the duplicated topics
+    const _params = params.filter((p) => {
+      return subscribedTopics.indexOf(p) === -1;
+    });
+    subscribedTopics.push(..._params);
+
     if (connection_state.value === CONNECTION_STATE.Connected) {
       nextTick(() => {
         ws.send(
@@ -95,11 +107,19 @@ export function initBinance() {
           })
         );
       });
+    } else {
+      setTimeout(() => {
+        _subscribe(params);
+      }, 1000);
     }
   };
 
   const _unSubscribe = (params) => {
     console.log("Unsubscribing", params);
+
+    subscribedTopics = subscribedTopics.filter((topic) => {
+      return params.indexOf(topic) === -1;
+    });
 
     if (connection_state.value === CONNECTION_STATE.Connected) {
       nextTick(() => {
