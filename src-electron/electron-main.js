@@ -206,8 +206,14 @@ ipcMain.handle("binanceSetKey", async (event, arg) => {
   }
 });
 
-ipcMain.handle("binanceAccountInfo", async (event, arg) => {
-  return JSON.stringify(await binanceClient.accountInfo());
+ipcMain.handle("binanceClient", async (event, arg) => {
+  try {
+    const { path, params } = JSON.parse(arg);
+    return JSON.stringify(await binanceClient[path](params));
+  } catch (err) {
+    console.log(err);
+    return JSON.stringify({ isSuccess: false });
+  }
 });
 
 app.on("window-all-closed", () => {

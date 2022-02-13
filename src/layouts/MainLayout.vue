@@ -102,7 +102,12 @@ export default defineComponent({
 
     const getAccountInfo = async () => {
       accountInfo.value = JSON.parse(
-        await ipcRenderer.invoke("binanceAccountInfo")
+        await ipcRenderer.invoke(
+          "binanceClient",
+          JSON.stringify({
+            path: "accountInfo",
+          })
+        )
       );
       balances.value = accountInfo.value.balances;
       // balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
