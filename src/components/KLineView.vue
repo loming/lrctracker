@@ -1,13 +1,26 @@
 <template>
   <q-page class="flex">
     <div class="flex column" style="position: relative; flex: 1">
+      <!-- Left Top Label and prices -->
       <div
         class="col"
         style="position: absolute; margin: 20px; z-index: 100; color: #ffffff"
       >
         <div class="column">
           <div class="row">
-            <div style="font-size: 24px">{{ symbolName }}</div>
+            <div style="font-size: 24px">
+              {{ symbolName }}
+              <q-btn
+                flat
+                round
+                push
+                size="12px"
+                :color="favouriteSymbol === symbol ? 'yellow' : 'grey'"
+                icon="star_rate"
+                style="margin-left: 10px"
+                @click="setFavourite"
+              />
+            </div>
           </div>
           <div class="flex-center row">
             <div
@@ -76,6 +89,8 @@ const { ipcRenderer } = window.electron;
 // import { WsAPI, UserAPI, ChainId } from "@loopring-web/loopring-sdk";
 import { createChart, CrosshairMode } from "lightweight-charts";
 import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
+import { useMainStore } from "stores/main.pinia";
+import { storeToRefs } from "pinia";
 
 export default defineComponent({
   name: "KLineView",
@@ -90,6 +105,12 @@ export default defineComponent({
   expose: ["symbol", "price", "changePercentage"],
   components: {},
   setup(props) {
+    const mainStore = useMainStore();
+    const { favouriteSymbol } = storeToRefs(mainStore);
+    const setFavourite = () => {
+      favouriteSymbol.value = props.symbol;
+    };
+
     const defaultInterval = "1d";
     const selectedInterval = ref(defaultInterval);
     const durations = {
@@ -310,6 +331,8 @@ export default defineComponent({
       selectInterval,
       chartDiv,
       onResize,
+      favouriteSymbol,
+      setFavourite,
     };
 
     // SETUP Loopring

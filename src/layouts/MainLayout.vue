@@ -10,15 +10,16 @@
     >
       <q-toolbar style="padding-left: 80px; padding-right: 16px">
         <!-- <q-scroll-area class="column bg-white" dark> -->
-        <div class="row no-wrap reverse">
+        <div class="row no-wrap reverse text-amber">
           <div
             v-for="coin in shownBalance"
             :key="coin.asset"
-            class="q-pa-sm text-amber"
+            class="q-pa-sm"
             style="white-space: nowrap"
           >
-            {{ coin.asset }} - <span class="blurry-text">{{ coin.free }}</span>
+            {{ coin.asset }} <span class="balance-coin">{{ coin.free }}</span>
           </div>
+          <div class="q-pa-sm">Your Balances:</div>
         </div>
         <!-- </q-scroll-area> -->
         <q-space />
@@ -56,6 +57,29 @@
             "
           /><strong>LRC</strong> Trader
         </q-toolbar-title>
+      </q-toolbar>
+      <q-toolbar>
+        <q-tabs
+          v-model="selectedTab"
+          @update:model-value="onTabChanged"
+          no-caps
+          :vertical="false"
+          align="left"
+          class="text-white shadow-2 q-px-md"
+          style="background-color: #131722"
+        >
+          <q-tab
+            v-for="(value, key) in tabs"
+            :key="key"
+            :name="key"
+            :class="key !== selectedTab ? 'tab-normal' : 'tab-active'"
+          >
+            <div>{{ `${value[0]} / ${value[1]}` }}</div>
+            <div v-if="key !== selectedTab">
+              {{ priceRefs[key] }}
+            </div>
+          </q-tab>
+        </q-tabs>
       </q-toolbar>
     </q-header>
 
@@ -101,9 +125,20 @@ export default defineComponent({
     const accountInfo = ref({});
     const balances = ref({});
 
-    const main = useMainStore();
+    const mainStore = useMainStore();
     // extract specific store properties
-    const { isLoggedBinance, isShowTrade, selectedPair } = storeToRefs(main);
+    const {
+      isLoggedBinance,
+      isShowTrade,
+      selectedPair,
+      selectedTab,
+      tabs,
+      priceRefs,
+    } = storeToRefs(mainStore);
+
+    const onTabChanged = (newTab) => {
+      selectedPair.value = tabs.value[newTab];
+    };
 
     const getBinanceKey = async () => {
       let result = await ipcRenderer.invoke("binanceGetKey");
@@ -186,6 +221,10 @@ export default defineComponent({
       apiSecret,
       saveBinance,
       shownBalance,
+      tabs,
+      selectedTab,
+      onTabChanged,
+      priceRefs,
     };
   },
 });

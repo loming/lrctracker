@@ -1,25 +1,6 @@
 <template>
   <q-page class="flex row" style="height: 1px">
-    <q-tabs
-      v-model="selectedTab"
-      @update:model-value="onTabChanged"
-      no-caps
-      vertical
-      align="left"
-      class="full-height text-white shadow-2 mdi-border-right q-pa-md"
-      style="background-color: #131722"
-    >
-      <q-tab
-        v-for="(value, key) in tabs"
-        :key="key"
-        :name="key"
-        :class="key !== selectedTab ? 'tab-normal' : 'tab-active'"
-      >
-        <div>{{ `${value[0]} / ${value[1]}` }}</div>
-        <div v-if="key !== selectedTab">{{ showPrice(priceRefs[key]) }}</div>
-      </q-tab>
-    </q-tabs>
-    <q-tab-panels v-model="selectedTab" animated keep-alive class="col">
+    <q-tab-panels v-model="selectedTab" animated keep-alive style="width: 100%">
       <q-tab-panel
         v-for="(value, key) in tabs"
         :key="key"
@@ -49,50 +30,25 @@ export default defineComponent({
   name: "PageIndex",
   components: { KLineView },
   setup(props) {
-    const tabs = ref({
-      lrcusdt: ["LRC", "USDT"],
-      lrceth: ["LRC", "ETH"],
-      lrcbtc: ["LRC", "BTC"],
-    });
-
     const mainStore = useMainStore();
 
     // extract specific store properties
-    const { selectedTab, selectedPair } = storeToRefs(mainStore);
-
-    const onTabChanged = (newTab) => {
-      selectedPair.value = tabs.value[newTab];
-    };
+    const { tabs, selectedTab, priceRefs, favouriteSymbol } =
+      storeToRefs(mainStore);
 
     // const selectedTab = ref("lrcusdt");
-    const favouriteSymbol = ref("lrcusdt");
 
-    const priceRefs = reactive({
-      lrcusdt: 0,
-      lrceth: 0,
-      lrcbtc: 0,
-    });
     const setPriceRef = (el) => {
       if (el) {
-        priceRefs[el.symbol] = el.price;
+        priceRefs.value[el.symbol] = el.price.lp;
       }
-    };
-    const showPrice = (data) => {
-      if (data) {
-        return `${data.lp}`;
-      }
-
-      return "";
     };
 
     return {
       tabs,
       selectedTab,
-      onTabChanged,
-      favouriteSymbol,
       setPriceRef,
-      priceRefs: priceRefs,
-      showPrice,
+      favouriteSymbol,
       isConnected: computed(
         () => useBinance().connection_state.value === CONNECTION_STATE.Connected
       ),
