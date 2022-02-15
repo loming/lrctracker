@@ -44,20 +44,6 @@
           @click="binancePrompt = true"
         />
       </q-toolbar>
-      <q-toolbar v-if="isShowTrade" inset>
-        <q-toolbar-title
-          ><q-img
-            src="~assets/icon.png"
-            spinner-color="white"
-            style="
-              height: 32px;
-              max-width: 32px;
-              margin-right: 10px;
-              margin-top: -5px;
-            "
-          /><strong>LRC</strong> Trader
-        </q-toolbar-title>
-      </q-toolbar>
       <q-toolbar>
         <q-tabs
           v-model="selectedTab"
@@ -113,6 +99,7 @@ import { defineComponent, ref, watchEffect, computed } from "vue";
 const { ipcRenderer } = window.electron;
 import { useMainStore } from "stores/main.pinia";
 import { storeToRefs } from "pinia";
+import useBinanceMixin from "components/Exchanges/useBinanceMixin";
 
 export default defineComponent({
   name: "MainLayout",
@@ -122,8 +109,6 @@ export default defineComponent({
 
     let apiKey = ref("");
     let apiSecret = ref("");
-    const accountInfo = ref({});
-    const balances = ref({});
 
     const mainStore = useMainStore();
     // extract specific store properties
@@ -135,6 +120,8 @@ export default defineComponent({
       tabs,
       priceRefs,
     } = storeToRefs(mainStore);
+
+    const { balances, getAccountInfo } = useBinanceMixin();
 
     const onTabChanged = (newTab) => {
       selectedPair.value = tabs.value[newTab];
@@ -160,24 +147,6 @@ export default defineComponent({
     };
 
     getBinanceKey();
-
-    const getAccountInfo = async () => {
-      accountInfo.value = JSON.parse(
-        await ipcRenderer.invoke(
-          "binanceClient",
-          JSON.stringify({
-            path: "accountInfo",
-          })
-        )
-      );
-      accountInfo.value.balances.map((b) => {
-        balances.value[b.asset] = {
-          free: b.free,
-          locked: b.locked,
-        };
-      });
-      // balances.value = accountInfo.value.balances.filter((b) => b.free > 0);
-    };
 
     watchEffect(() => {
       if (apiKey.value !== "") {

@@ -8,7 +8,7 @@ export const useMainStore = defineStore("main", {
   state: () => ({
     isLoggedBinance: useLocalStorage("isLoggedBinance", false),
     isShowTrade: useLocalStorage("isShowTrade", false),
-    balances: useLocalStorage("balances", {}),
+    balances: useLocalStorage("binanceBalances", {}),
     tabs: useLocalStorage("tabs", {
       lrcusdt: ["LRC", "USDT"],
       lrceth: ["LRC", "ETH"],

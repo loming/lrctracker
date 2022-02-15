@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex">
-    <div class="flex column" style="position: relative; flex: 1">
+    <div class="flex row" style="position: relative; flex: 1">
       <!-- Left Top Label and prices -->
       <div
         class="col"
@@ -19,7 +19,11 @@
                 icon="star_rate"
                 style="margin-left: 10px"
                 @click="setFavourite"
-              />
+              >
+                <q-tooltip>
+                  Display {{ symbolName }} price in the Tray
+                </q-tooltip>
+              </q-btn>
             </div>
           </div>
           <div class="flex-center row">
@@ -70,6 +74,9 @@
           <q-resize-observer @resize="onResize" />
         </div>
       </div>
+      <div v-if="isShowTrade" class="q-pa-md trader-panel">
+        <trade-panel-view />
+      </div>
     </div>
   </q-page>
 </template>
@@ -89,6 +96,7 @@ const { ipcRenderer } = window.electron;
 // import { WsAPI, UserAPI, ChainId } from "@loopring-web/loopring-sdk";
 import { createChart, CrosshairMode } from "lightweight-charts";
 import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
+import TradePanelView from "components/TradePanel.vue";
 import { useMainStore } from "stores/main.pinia";
 import { storeToRefs } from "pinia";
 
@@ -103,10 +111,10 @@ export default defineComponent({
     },
   },
   expose: ["symbol", "price", "changePercentage"],
-  components: {},
+  components: { TradePanelView },
   setup(props) {
     const mainStore = useMainStore();
-    const { favouriteSymbol } = storeToRefs(mainStore);
+    const { favouriteSymbol, isShowTrade } = storeToRefs(mainStore);
     const setFavourite = () => {
       favouriteSymbol.value = props.symbol;
     };
@@ -333,6 +341,7 @@ export default defineComponent({
       onResize,
       favouriteSymbol,
       setFavourite,
+      isShowTrade,
     };
 
     // SETUP Loopring

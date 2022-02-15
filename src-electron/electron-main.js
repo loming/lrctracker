@@ -10,7 +10,7 @@ import {
 import path from "path";
 import os from "os";
 import ansi from "ansicolor";
-import Binance from "binance-api-node";
+import Binance, { ErrorCodes } from "binance-api-node";
 import keytar from "keytar";
 
 let binanceClient = null;
@@ -212,7 +212,7 @@ ipcMain.handle("binanceClient", async (event, arg) => {
     return JSON.stringify(await binanceClient[path](params));
   } catch (err) {
     console.log(err);
-    return JSON.stringify({ isSuccess: false });
+    return JSON.stringify({ isSuccess: false, errMsg: err.toString() });
   }
 });
 

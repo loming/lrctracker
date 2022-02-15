@@ -97,17 +97,25 @@ export function initBinance() {
     });
     subscribedTopics.push(..._params);
 
-    if (connection_state.value === CONNECTION_STATE.Connected) {
-      nextTick(() => {
-        ws.send(
-          JSON.stringify({
-            method: "SUBSCRIBE",
-            params: params,
-            id: binanceId++,
-          })
-        );
-      });
-    } else {
+    try {
+      if (connection_state.value === CONNECTION_STATE.Connected) {
+        nextTick(() => {
+          ws.send(
+            JSON.stringify({
+              method: "SUBSCRIBE",
+              params: params,
+              id: binanceId++,
+            })
+          );
+        });
+      } else {
+        setTimeout(() => {
+          _subscribe(params);
+        }, 1000);
+      }
+    } catch (err) {
+      console.error(err);
+      console.log("Retrying in 1 second...");
       setTimeout(() => {
         _subscribe(params);
       }, 1000);

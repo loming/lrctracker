@@ -18,3 +18,22 @@
 .tab-normal {
   font-size: 16px;
 }
+
+.trader-panel {
+  background-color: $background;
+  width: 30vw;
+  min-width: 180px;
+}
+
+.trader-title {
+  font-size: 20px;
+  color: white;
+}
+
+.trader-card {
+  background-color: $background;
+}
+
+.trade-panel-history {
+  font-size: 10px;
+}
