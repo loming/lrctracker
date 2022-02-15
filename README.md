@@ -1,6 +1,16 @@
 # LRC Tracker (lrctracker)
 
-LRC Tracker using Quasar framework in Vue and ElectronJS to bundle as a Mac app
+LRC Tracker using Quasar framework in Vue and ElectronJS to bundle as a Mac app.
+The Binance's API key / secret are stored using Keychain.
+
+Screenshot:-
+![Screenshot](screenshot.jpg?raw=true)
+
+Features:-
+
+1. Showing LRC price in Mac's tray bar
+2. Fast trading with market orders
+3. Simple charts
 
 ## Install the dependencies
 
