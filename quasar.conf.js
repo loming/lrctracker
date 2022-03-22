@@ -72,6 +72,13 @@ module.exports = configure(function (ctx) {
         const nodePolyfillWebpackPlugin = require("node-polyfill-webpack-plugin");
         chain.plugin("node-polyfill").use(nodePolyfillWebpackPlugin);
 
+        chain.module
+          .rule("wasm")
+          .test(/\.wasm$/)
+          .use("wasm-loader")
+          .loader("wasm-loader")
+          .end();
+
         chain.resolve.alias.set(
           "stores",
           path.resolve(__dirname, "src/stores")

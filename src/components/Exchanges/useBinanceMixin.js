@@ -17,6 +17,7 @@ export default function () {
         })
       )
     );
+    console.log(accountInfo);
     accountInfo.balances.map((b) => {
       balances.value[b.asset] = {
         free: b.free,

@@ -31,7 +31,13 @@
 // });
 
 import { contextBridge, ipcRenderer } from "electron";
+// import fs from "fs";
 
 contextBridge.exposeInMainWorld("electron", {
   ipcRenderer,
+  // fs: {
+  //   readFileSync: fs.readFileSync,
+  //   existsSync: fs.existsSync,
+  //   // Other fs methods here
+  // },
 });

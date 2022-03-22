@@ -3,67 +3,79 @@
     <div class="flex row" style="position: relative; flex: 1">
       <!-- Left Top Label and prices -->
       <div
-        class="col"
+        class="col row"
         style="position: absolute; margin: 20px; z-index: 100; color: #ffffff"
       >
-        <div class="column">
-          <div class="row">
-            <div style="font-size: 24px">
-              {{ symbolName }}
-              <q-btn
-                flat
-                round
-                push
-                size="12px"
-                :color="favouriteSymbol === symbol ? 'yellow' : 'grey'"
-                icon="star_rate"
-                style="margin-left: 10px"
-                @click="setFavourite"
+        <div class="col-auto">
+          <div class="column">
+            <div class="row">
+              <div style="font-size: 24px">
+                {{ symbolName }}
+                <q-btn
+                  flat
+                  round
+                  push
+                  size="12px"
+                  :color="favouriteSymbol === symbol ? 'yellow' : 'grey'"
+                  icon="star_rate"
+                  style="margin-left: 10px"
+                  @click="setFavourite"
+                >
+                  <q-tooltip>
+                    Display {{ symbolName }} price in the Tray
+                  </q-tooltip>
+                </q-btn>
+              </div>
+            </div>
+            <div class="flex-center row">
+              <div
+                :style="`font-size: 22px; font-weight: bold; color: ${
+                  price.d > 0
+                    ? 'rgba(0, 250, 136, 0.8)'
+                    : price.d < 0
+                    ? 'rgba(255,82,82, 0.8)'
+                    : '#ffffff'
+                }`"
               >
-                <q-tooltip>
-                  Display {{ symbolName }} price in the Tray
-                </q-tooltip>
-              </q-btn>
+                {{ price.lp }}
+              </div>
+              <div
+                :style="`color: ${
+                  changePercentage > 0
+                    ? 'rgba(0, 150, 136, 0.8)'
+                    : 'rgba(255,82,82, 0.8)'
+                }; padding 10px; border-radius: 4px; margin-left: 20px; font-weight: bold;`"
+              >
+                {{ changePercentage }}%
+              </div>
             </div>
           </div>
-          <div class="flex-center row">
-            <div
-              :style="`font-size: 22px; font-weight: bold; color: ${
-                price.d > 0
-                  ? 'rgba(0, 250, 136, 0.8)'
-                  : price.d < 0
-                  ? 'rgba(255,82,82, 0.8)'
-                  : '#ffffff'
-              }`"
-            >
-              {{ price.lp }}
-            </div>
-            <div
-              :style="`color: ${
-                changePercentage > 0
-                  ? 'rgba(0, 150, 136, 0.8)'
-                  : 'rgba(255,82,82, 0.8)'
-              }; padding 10px; border-radius: 4px; margin-left: 20px; font-weight: bold;`"
-            >
-              {{ changePercentage }}%
-            </div>
+          <div style="margin-top: 10px">
+            <q-btn color="secondary" :label="durations[selectedInterval]">
+              <q-menu auto-close>
+                <q-list style="min-width: 100px">
+                  <q-item
+                    v-for="(item, key) in durations"
+                    :key="key"
+                    clickable
+                    @click="selectInterval(key)"
+                  >
+                    <q-item-section>{{ item }}</q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-btn>
           </div>
         </div>
-        <div style="margin-top: 10px">
-          <q-btn color="secondary" :label="durations[selectedInterval]">
-            <q-menu auto-close>
-              <q-list style="min-width: 100px">
-                <q-item
-                  v-for="(item, key) in durations"
-                  :key="key"
-                  clickable
-                  @click="selectInterval(key)"
-                >
-                  <q-item-section>{{ item }}</q-item-section>
-                </q-item>
-              </q-list>
-            </q-menu>
-          </q-btn>
+        <div class="col fa-align-right">
+          <q-chip
+            v-model:selected="showRSI14"
+            color="primary"
+            text-color="white"
+            icon="cancel"
+          >
+            RSI 14
+          </q-chip>
         </div>
       </div>
       <div class="col" style="position: relative; background-color: #131722">
@@ -98,6 +110,7 @@ import { createChart, CrosshairMode } from "lightweight-charts";
 import { useBinance, CONNECTION_STATE } from "components/Exchanges/binance";
 import TradePanelView from "components/TradePanel.vue";
 import { useMainStore } from "stores/main.pinia";
+import { useChartStore } from "stores/chart.pinia";
 import { storeToRefs } from "pinia";
 
 export default defineComponent({
@@ -175,6 +188,14 @@ export default defineComponent({
       if (klinesHandler.klines.value) {
         if (candleSeries) {
           candleSeries.setData(klinesHandler.klines.value);
+
+          if (RSI14series) {
+            setRSI14(
+              klinesHandler.klines.value.map((d) => {
+                return { time: d.time, close: d.close };
+              })
+            );
+          }
         }
       }
     });
@@ -191,6 +212,14 @@ export default defineComponent({
       if (klinesHandler.lastKline.value) {
         if (candleSeries) {
           candleSeries.update(klinesHandler.lastKline.value);
+
+          if (RSI14series) {
+            setRSI14(
+              klinesHandler.klines.value.map((d) => {
+                return { time: d.time, close: d.close };
+              })
+            );
+          }
         }
       }
     });
@@ -325,9 +354,64 @@ export default defineComponent({
         // Code that will run only after the
         // entire view has been rendered
         setupChart();
+        // setupTAs();
       });
     });
 
+    const chartStore = useChartStore();
+    const {
+      showRSI14,
+      showEMA12,
+      showEMA26,
+      showEMA50,
+      showEMA100,
+      showEMA200,
+    } = storeToRefs(chartStore);
+
+    var RSI14series = null;
+
+    const setupTAs = async () => {
+      await init(
+        "https://unpkg.com/talib.js@0.1.0/lib/talib.wasm" /* optionally pass in .wasm file path here */
+      );
+
+      watchEffect(() => {
+        if (showRSI14.value) {
+          if (!RSI14series) {
+            RSI14series = chart.addLineSeries({
+              color: "rgba(4, 111, 232, 1)",
+              lineWidth: 2,
+            });
+          }
+        } else {
+          if (RSI14series) {
+            chart.removeSeries(RSI14series);
+          }
+        }
+      });
+    };
+    const setRSI14 = async (data) => {
+      // const result = JSON.parse(
+      //   await ipcRenderer.invoke(
+      //     "talib",
+      //     JSON.stringify({
+      //       path: "RSI",
+      //       params: [data.map((d) => d.close)],
+      //     })
+      //   )
+      // );
+
+      // tulind.indicators.rsa.indicator([data.map((d) => d.close)])
+      // const result = RSI(data.map((d) => d.close));
+
+      if (result) {
+        RSI14series.setData(
+          result.map((r, index) => {
+            return { time: d[index].time, value: r };
+          })
+        );
+      }
+    };
     // binance.connectBinance();
 
     return {
@@ -342,6 +426,7 @@ export default defineComponent({
       favouriteSymbol,
       setFavourite,
       isShowTrade,
+      showRSI14,
     };
 
     // SETUP Loopring

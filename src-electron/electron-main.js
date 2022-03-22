@@ -12,6 +12,9 @@ import os from "os";
 import ansi from "ansicolor";
 import Binance, { ErrorCodes } from "binance-api-node";
 import keytar from "keytar";
+// import { init, RSI } from "talib-web";
+
+// init();
 
 let binanceClient = null;
 

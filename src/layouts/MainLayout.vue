@@ -89,6 +89,11 @@
           <q-btn flat label="Cancel" v-close-popup />
           <q-btn flat label="Save" @click="saveBinance()" />
         </q-card-actions>
+
+        <q-separator />
+        <q-card-actions align="right" class="text-primary">
+          <q-btn flat label="Reset Cache" color="red" @click="resetCache()" />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </q-layout>
@@ -166,6 +171,9 @@ export default defineComponent({
       }, []);
     });
 
+    const resetCache = () => {
+      mainStore.reset();
+    };
     // watchEffect(async () => {
     //   if (isLoggedBinance.value) {
     //     console.log(
@@ -194,6 +202,7 @@ export default defineComponent({
       selectedTab,
       onTabChanged,
       priceRefs,
+      resetCache,
     };
   },
 });
